@@ -22,6 +22,10 @@ class EnrichmentService:
         for symbol in symbols:
             res = await self._enrich_symbol(symbol)
             results.append(res)
+            
+        # Enrich Nifty 50 Benchmark too!
+        await self._enrich_symbol("^NSEI")
+        
         print("Enrichment symbol results:", results)
         
         # Once data is fetched, automatically generate snapshots!
@@ -79,7 +83,9 @@ class EnrichmentService:
             await prisma.analyticssnapshot.create_many(data=snapshots_data)
         
     async def _enrich_symbol(self, symbol: str):
-        await self.market_data_service.get_company_metadata(symbol)
+        # Indices don't have company metadata (sector, pe ratios, etc.)
+        if not symbol.startswith('^'):
+            await self.market_data_service.get_company_metadata(symbol)
         
         end_date = datetime.now()
         start_date = end_date - timedelta(days=365 * 3)

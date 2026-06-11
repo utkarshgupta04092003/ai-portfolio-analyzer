@@ -92,6 +92,10 @@ async def historical_tool(portfolio_id: str, start_date: str | None = None, end_
     except ValueError:
         return json.dumps({"error": "Dates must be in YYYY-MM-DD format"})
 
+    # Validate portfolio_id as valid 24-character hex MongoDB ObjectId
+    if not portfolio_id or len(portfolio_id) != 24 or not all(c in '0123456789abcdefABCDEF' for c in portfolio_id):
+        return json.dumps({"error": f"Invalid portfolio ID format: {portfolio_id}"})
+
     portfolio = await prisma.portfolio.find_unique(
         where={"id": portfolio_id},
         include={"holdings": True}

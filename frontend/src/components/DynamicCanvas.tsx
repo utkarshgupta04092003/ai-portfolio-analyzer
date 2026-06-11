@@ -8,12 +8,28 @@ import RiskDashboard from "./RiskDashboard";
 import SectorExposureDashboard from "./SectorExposureDashboard";
 import SimulationDashboard from "./SimulationDashboard";
 
-export default function DynamicCanvas() {
+interface Props {
+  onSelectPrompt?: (prompt: string) => void;
+}
+
+export default function DynamicCanvas({ onSelectPrompt }: Props) {
   const { activeCanvas, canvasPayload } = useAppStore();
 
   if (!canvasPayload) {
     return (
-      <div style={{ textAlign: "center", color: "var(--text-secondary)" }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          width: "100%",
+          height: "100%",
+          textAlign: "center",
+          color: "var(--text-secondary)",
+          padding: "2rem",
+        }}
+      >
         <h2
           style={{
             fontSize: "1.5rem",
@@ -49,7 +65,11 @@ export default function DynamicCanvas() {
       return <FundamentalsDashboard data={canvasPayload} />;
     default:
       return (
-        <GeneralDashboard data={canvasPayload} activeCanvas={activeCanvas} />
+        <GeneralDashboard
+          data={canvasPayload}
+          activeCanvas={activeCanvas}
+          onSelectPrompt={onSelectPrompt}
+        />
       );
   }
 }

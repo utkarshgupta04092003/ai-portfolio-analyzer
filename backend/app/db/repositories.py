@@ -25,6 +25,9 @@ class PortfolioRepository:
         
     @staticmethod
     async def get_portfolio(portfolio_id: str) -> Optional[Portfolio]:
+        # Validate portfolio_id is a valid 24-character hex MongoDB ObjectId
+        if not portfolio_id or len(portfolio_id) != 24 or not all(c in '0123456789abcdefABCDEF' for c in portfolio_id):
+            return None
         return await prisma.portfolio.find_unique(
             where={"id": portfolio_id},
             include={"holdings": True}

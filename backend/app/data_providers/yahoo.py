@@ -4,10 +4,10 @@ import yfinance as yf
 
 class YahooFinanceProvider(MarketDataProvider):
     def _normalize_symbol(self, symbol: str) -> str:
-        # Append .NS for Indian Stock Market if not present
-        if not symbol.endswith('.NS') and not symbol.endswith('.BO'):
-            return f"{symbol}.NS"
-        return symbol
+        # Check if symbol is an index or already formatted
+        if symbol.startswith('^') or symbol.endswith('.NS') or symbol.endswith('.BO'):
+            return symbol
+        return f"{symbol}.NS"
 
     def get_historical_prices(self, symbol: str, start_date: str, end_date: str) -> List[Dict[str, Any]]:
         norm_symbol = self._normalize_symbol(symbol)

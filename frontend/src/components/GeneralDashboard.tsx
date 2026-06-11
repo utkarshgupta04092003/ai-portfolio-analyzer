@@ -1,11 +1,23 @@
-import { BarChart3, Info, PieChart, ShieldAlert } from "lucide-react";
+import {
+  BarChart3,
+  Info,
+  Layers,
+  PieChart,
+  ShieldAlert,
+  TrendingUp,
+} from "lucide-react";
 
 interface Props {
   data: any;
   activeCanvas?: string;
+  onSelectPrompt?: (prompt: string) => void;
 }
 
-export default function GeneralDashboard({ data, activeCanvas }: Props) {
+export default function GeneralDashboard({
+  data,
+  activeCanvas,
+  onSelectPrompt,
+}: Props) {
   // 1. Check if the payload is empty or not provided
   const isEmpty =
     !data || (typeof data === "object" && Object.keys(data).length === 0);
@@ -36,6 +48,18 @@ export default function GeneralDashboard({ data, activeCanvas }: Props) {
         title: "Company Fundamentals",
         desc: "Review P/E ratios, company names, dividend yields, and beta.",
         prompt: "What are the fundamentals of my portfolio holdings?",
+      },
+      {
+        icon: <Layers size={24} style={{ color: "#a855f7" }} />,
+        title: "Correlation Analysis",
+        desc: "Examine how closely your stock holdings move together to identify overlaps.",
+        prompt: "What is the correlation matrix of my holdings?",
+      },
+      {
+        icon: <TrendingUp size={24} style={{ color: "#f97316" }} />,
+        title: "Benchmark Comparison",
+        desc: "Compare your portfolio's returns, alpha, and beta against the Nifty 50 index benchmark.",
+        prompt: "Compare my portfolio performance against Nifty 50.",
       },
     ];
 
@@ -77,13 +101,13 @@ export default function GeneralDashboard({ data, activeCanvas }: Props) {
           {features.map((feat, idx) => (
             <div
               key={idx}
-              className="glass-panel"
+              className="glass-panel onboarding-card"
+              onClick={() => onSelectPrompt && onSelectPrompt(feat.prompt)}
               style={{
                 padding: "1.5rem",
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
-                transition: "all 0.2s",
                 background: "rgba(255,255,255,0.02)",
               }}
             >
@@ -119,9 +143,9 @@ export default function GeneralDashboard({ data, activeCanvas }: Props) {
               </div>
               <div
                 style={{
-                  marginTop: "1.25rem",
+                  marginTop: "0.75rem",
                   borderTop: "1px solid var(--glass-border)",
-                  paddingTop: "0.75rem",
+                  paddingTop: "0.5rem",
                 }}
               >
                 <span

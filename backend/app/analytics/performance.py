@@ -51,10 +51,71 @@ class PerformanceAnalyzer:
         annualized_return = (1 + total_return) ** (TRADING_DAYS_PER_YEAR / len(port_returns)) - 1
         
         excess_returns = port_returns - (RISK_FREE_RATE_DEFAULT / TRADING_DAYS_PER_YEAR)
-        sharpe_ratio = np.sqrt(TRADING_DAYS_PER_YEAR) * excess_returns.mean() / excess_returns.std()
+        std_dev = excess_returns.std()
+        sharpe_ratio = np.sqrt(TRADING_DAYS_PER_YEAR) * excess_returns.mean() / std_dev if std_dev > 0 else 0.0
         
+        # Benchmark calculations using Nifty 50 (^NSEI)
+        benchmark_symbol = "^NSEI"
+        dates_index = port_returns.index
+        
+        # Ensure benchmark data is in DB, otherwise fetch it on the fly
+        bench_count = await prisma.historicalprice.count(where={"symbol": benchmark_symbol})
+        if bench_count == 0:
+            try:
+                from app.services.enrichment_service import EnrichmentService
+                enrichment_svc = EnrichmentService()
+                await enrichment_svc._enrich_symbol(benchmark_symbol)
+            except Exception as e:
+                print(f"Failed to fetch benchmark data on the fly: {e}")
+                
+        prices = await prisma.historicalprice.find_many(
+            where={
+                "symbol": benchmark_symbol,
+                "date": {
+                    "gte": dates_index.min().to_pydatetime(),
+                    "lte": dates_index.max().to_pydatetime()
+                }
+            },
+            order={"date": "asc"}
+        )
+        
+        benchmark_total_return = 0.0
+        benchmark_annualized_return = 0.0
+        alpha = 0.0
+        beta = 1.0
+        
+        if prices:
+            bench_df = pd.DataFrame([{"date": p.date, "close": p.close} for p in prices])
+            bench_df.set_index("date", inplace=True)
+            bench_df = bench_df.reindex(dates_index).ffill().bfill()
+            
+            bench_returns = bench_df["close"].pct_change().dropna()
+            
+            # Align indices
+            aligned_df = pd.concat([port_returns, bench_returns], axis=1).dropna()
+            aligned_df.columns = ["port", "bench"]
+            
+            if not aligned_df.empty:
+                benchmark_total_return = (1 + aligned_df["bench"]).prod() - 1
+                benchmark_annualized_return = (1 + benchmark_total_return) ** (TRADING_DAYS_PER_YEAR / len(aligned_df)) - 1
+                
+                # Beta = Cov(Port, Bench) / Var(Bench)
+                covariance = aligned_df["port"].cov(aligned_df["bench"])
+                variance = aligned_df["bench"].var()
+                if variance > 0:
+                    beta = covariance / variance
+                else:
+                    beta = 1.0
+                    
+                # Jensen's Alpha = Port Excess Return - Beta * Bench Excess Return
+                alpha = (annualized_return - RISK_FREE_RATE_DEFAULT) - beta * (benchmark_annualized_return - RISK_FREE_RATE_DEFAULT)
+                
         return {
             "total_return": float(total_return),
             "annualized_return": float(annualized_return),
-            "sharpe_ratio": float(sharpe_ratio)
+            "sharpe_ratio": float(sharpe_ratio),
+            "benchmark_total_return": float(benchmark_total_return),
+            "benchmark_annualized_return": float(benchmark_annualized_return),
+            "alpha": float(alpha),
+            "beta": float(beta)
         }

@@ -2,6 +2,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -13,6 +14,10 @@ interface Props {
     total_return: number;
     annualized_return: number;
     sharpe_ratio: number;
+    benchmark_total_return?: number;
+    benchmark_annualized_return?: number;
+    alpha?: number;
+    beta?: number;
   };
 }
 
@@ -21,11 +26,19 @@ export default function PerformanceDashboard({ data }: Props) {
   const chartData = [
     {
       name: "Total Return",
-      value: Number((data.total_return * 100).toFixed(2)),
+      Portfolio: Number((data.total_return * 100).toFixed(2)),
+      Benchmark:
+        data.benchmark_total_return !== undefined
+          ? Number((data.benchmark_total_return * 100).toFixed(2))
+          : 0,
     },
     {
-      name: "Annualized",
-      value: Number((data.annualized_return * 100).toFixed(2)),
+      name: "Annualized Return",
+      Portfolio: Number((data.annualized_return * 100).toFixed(2)),
+      Benchmark:
+        data.benchmark_annualized_return !== undefined
+          ? Number((data.benchmark_annualized_return * 100).toFixed(2))
+          : 0,
     },
   ];
 
@@ -50,37 +63,110 @@ export default function PerformanceDashboard({ data }: Props) {
           Performance Dashboard
         </h2>
         <p style={{ color: "var(--text-secondary)" }}>
-          Deterministic metrics powered by historical price data.
+          Portfolio performance compared against the **Nifty 50** index
+          benchmark.
         </p>
       </div>
 
-      <div style={{ display: "flex", gap: "2rem", marginBottom: "3rem" }}>
+      <div style={{ display: "flex", gap: "1.5rem", marginBottom: "2.5rem" }}>
+        {/* Sharpe Ratio Card */}
         <div
           style={{
-            background: "rgba(59, 130, 246, 0.1)",
-            padding: "1.5rem",
+            background: "rgba(59, 130, 246, 0.08)",
+            padding: "1.25rem",
             borderRadius: "12px",
-            border: "1px solid rgba(59, 130, 246, 0.2)",
+            border: "1px solid rgba(59, 130, 246, 0.15)",
             flex: 1,
           }}
         >
           <h3
             style={{
               color: "var(--text-secondary)",
-              fontSize: "0.9rem",
+              fontSize: "0.85rem",
               textTransform: "uppercase",
+              fontWeight: 600,
+              letterSpacing: "0.05em",
             }}
           >
             Sharpe Ratio
           </h3>
           <p
             style={{
-              fontSize: "2.5rem",
+              fontSize: "2.2rem",
               fontWeight: 700,
               color: "var(--accent-primary)",
+              marginTop: "0.25rem",
             }}
           >
             {data.sharpe_ratio?.toFixed(2) || "0.00"}
+          </p>
+        </div>
+
+        {/* Jensen's Alpha Card */}
+        <div
+          style={{
+            background: "rgba(16, 185, 129, 0.08)",
+            padding: "1.25rem",
+            borderRadius: "12px",
+            border: "1px solid rgba(16, 185, 129, 0.15)",
+            flex: 1,
+          }}
+        >
+          <h3
+            style={{
+              color: "var(--text-secondary)",
+              fontSize: "0.85rem",
+              textTransform: "uppercase",
+              fontWeight: 600,
+              letterSpacing: "0.05em",
+            }}
+          >
+            Jensen's Alpha (α)
+          </h3>
+          <p
+            style={{
+              fontSize: "2.2rem",
+              fontWeight: 700,
+              color: "#10b981",
+              marginTop: "0.25rem",
+            }}
+          >
+            {data.alpha !== undefined
+              ? `${(data.alpha * 100).toFixed(2)}%`
+              : "0.00%"}
+          </p>
+        </div>
+
+        {/* CAPM Beta Card */}
+        <div
+          style={{
+            background: "rgba(139, 92, 246, 0.08)",
+            padding: "1.25rem",
+            borderRadius: "12px",
+            border: "1px solid rgba(139, 92, 246, 0.15)",
+            flex: 1,
+          }}
+        >
+          <h3
+            style={{
+              color: "var(--text-secondary)",
+              fontSize: "0.85rem",
+              textTransform: "uppercase",
+              fontWeight: 600,
+              letterSpacing: "0.05em",
+            }}
+          >
+            CAPM Beta (β)
+          </h3>
+          <p
+            style={{
+              fontSize: "2.2rem",
+              fontWeight: 700,
+              color: "#8b5cf6",
+              marginTop: "0.25rem",
+            }}
+          >
+            {data.beta !== undefined ? data.beta.toFixed(2) : "1.00"}
           </p>
         </div>
       </div>
@@ -107,13 +193,15 @@ export default function PerformanceDashboard({ data }: Props) {
                 border: "1px solid var(--glass-border)",
                 borderRadius: "8px",
               }}
-              formatter={(value: number) => [`${value}%`, "Return"]}
+              formatter={(value: number, name: string) => [`${value}%`, name]}
             />
+            <Legend verticalAlign="top" height={36} />
             <Bar
-              dataKey="value"
+              dataKey="Portfolio"
               fill="var(--accent-primary)"
               radius={[6, 6, 0, 0]}
             />
+            <Bar dataKey="Benchmark" fill="#10b981" radius={[6, 6, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
