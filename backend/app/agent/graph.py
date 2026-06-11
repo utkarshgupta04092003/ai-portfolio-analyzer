@@ -24,15 +24,18 @@ llm_with_tools = llm.bind_tools(tools)
 # Create a map for fast lookup
 tool_map = {t.name: t for t in tools}
 
-def router_node(state: AgentState):
+async def router_node(state: AgentState):
     """Determines if a tool should be called."""
     messages = state["messages"]
     prompt = PromptManager.get_router_prompt()
     chain = prompt | llm_with_tools
-    response = chain.invoke({"messages": messages})
+    response = await chain.ainvoke({
+        "messages": messages, 
+        "portfolio_id": state.get("portfolio_id", "unknown")
+    })
     return {"messages": [response]}
 
-def tool_node(state: AgentState):
+async def tool_node(state: AgentState):
     """Executes the selected tool."""
     last_message = state["messages"][-1]
     
@@ -47,7 +50,7 @@ def tool_node(state: AgentState):
     if not tool_func:
         response = json.dumps({"error": "Tool not found"})
     else:
-        response = tool_func.invoke(tool_call["args"])
+        response = await tool_func.ainvoke(tool_call["args"])
     
     # Extract canvas type based on tool called
     canvas_map = {
@@ -55,7 +58,8 @@ def tool_node(state: AgentState):
         "risk_tool": "RiskDashboard",
         "diversification_tool": "SectorExposure",
         "correlation_tool": "CorrelationMatrix",
-        "simulation_tool": "SimulationResults"
+        "simulation_tool": "SimulationResults",
+        "fundamentals_tool": "FundamentalsDashboard"
     }
     
     canvas_type = canvas_map.get(tool_call["name"], "PortfolioSummary")
@@ -75,7 +79,7 @@ def tool_node(state: AgentState):
         "canvas_payload": canvas_payload
     }
 
-def response_node(state: AgentState):
+async def response_node(state: AgentState):
     """Generates the final natural language response."""
     # Find the tool message
     tool_msg = next((m for m in reversed(state["messages"]) if isinstance(m, ToolMessage)), None)
@@ -87,7 +91,7 @@ def response_node(state: AgentState):
     prompt = PromptManager.get_response_prompt()
     chain = prompt | llm
     
-    response = chain.invoke({
+    response = await chain.ainvoke({
         "user_query": human_msg.content,
         "tool_output": tool_msg.content
     })
