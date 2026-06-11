@@ -14,22 +14,8 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { v4 as uuidv4 } from "uuid";
 import styles from "./page.module.css";
-
-const generateUUID = () => {
-  if (
-    typeof window !== "undefined" &&
-    window.crypto &&
-    window.crypto.randomUUID
-  ) {
-    return window.crypto.randomUUID();
-  }
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-};
 
 function DashboardContent() {
   const [input, setInput] = useState("");
@@ -128,7 +114,7 @@ function DashboardContent() {
   };
 
   const startNewChat = () => {
-    const newId = generateUUID();
+    const newId = uuidv4();
     setSessionId(newId);
     updateUrlSession(newId);
     setMessages([
@@ -164,7 +150,7 @@ function DashboardContent() {
       setSessionId(sessionUrlId);
       loadSessionMessages(sessionUrlId);
     } else {
-      const newId = generateUUID();
+      const newId = uuidv4();
       setSessionId(newId);
       updateUrlSession(newId);
     }

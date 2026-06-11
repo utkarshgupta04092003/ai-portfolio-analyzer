@@ -17,12 +17,14 @@
     "react-markdown": "^10.1.0",
     "recharts": "^2.12.7",
     "remark-gfm": "^4.0.1",
+    "uuid": "^14.0.0",
     "zustand": "^4.5.2"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/uuid": "^10.0.0",
     "eslint": "^8",
     "eslint-config-next": "^15.0.0",
     "typescript": "^5"
