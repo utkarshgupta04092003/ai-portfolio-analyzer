@@ -13,7 +13,7 @@ class YahooFinanceProvider(MarketDataProvider):
         norm_symbol = self._normalize_symbol(symbol)
         ticker = yf.Ticker(norm_symbol)
         df = ticker.history(start=start_date, end=end_date)
-        
+        print("yfinance historical", df.head())
         prices = []
         for index, row in df.iterrows():
             prices.append({
@@ -32,5 +32,9 @@ class YahooFinanceProvider(MarketDataProvider):
             "name": info.get("shortName", symbol),
             "sector": info.get("sector", "Unknown"),
             "industry": info.get("industry", "Unknown"),
-            "marketCap": info.get("marketCap", 0)
+            "marketCap": info.get("marketCap", 0),
+            "trailingPE": info.get("trailingPE"),
+            "forwardPE": info.get("forwardPE"),
+            "dividendYield": info.get("dividendYield"),
+            "beta": info.get("beta")
         }

@@ -1,0 +1,31 @@
+# Root Gitignore
+
+# Node
+node_modules/
+frontend/node_modules/
+.npm/
+
+# Next.js
+.next/
+frontend/.next/
+out/
+build/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+backend/venv/
+backend/.venv/
+backend/env/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db

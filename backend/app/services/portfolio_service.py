@@ -21,6 +21,9 @@ class PortfolioService:
         if 'symbol' not in df.columns or 'quantity' not in df.columns:
             raise ValueError("File must contain 'symbol' and 'quantity' columns.")
             
+        # Drop rows where symbol or quantity is missing/NaN to avoid database errors
+        df.dropna(subset=['symbol', 'quantity'], inplace=True)
+            
         portfolio = await PortfolioRepository.create_portfolio(user_id, name)
         
         holdings_data = []

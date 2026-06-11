@@ -4,9 +4,9 @@ from app.db.client import prisma
 
 class UserRepository:
     @staticmethod
-    async def create_user(email: str, name: str = None) -> User:
+    async def create_user(email: str) -> User:
         return await prisma.user.create(
-            data={"email": email, "name": name}
+            data={"email": email}
         )
 
     @staticmethod
@@ -33,6 +33,11 @@ class PortfolioRepository:
 class HoldingRepository:
     @staticmethod
     async def bulk_create_holdings(holdings_data: List[dict]) -> int:
-        return await prisma.holding.create_many(
-            data=holdings_data
-        )
+        count = 0
+        print(holdings_data)
+        for h in holdings_data:
+            # Remove None values to avoid Prisma errors on optional fields
+            clean_data = {k: v for k, v in h.items() if v is not None}
+            await prisma.holding.create(data=clean_data)
+            count += 1
+        return count

@@ -24,11 +24,13 @@ app.include_router(chat.router, prefix=f"{settings.API_V1_STR}/chat", tags=["Cha
 @app.on_event("startup")
 async def startup() -> None:
     await prisma.connect()
+    print("Prisma connected")
 
 @app.on_event("shutdown")
 async def shutdown() -> None:
     if prisma.is_connected():
         await prisma.disconnect()
+    print("Prisma disconnected")
 
 @app.get("/health", tags=["System"])
 async def health_check():
@@ -36,3 +38,14 @@ async def health_check():
         "status": "ok",
         "db_connected": prisma.is_connected()
     }
+
+@app.get("/test", tags=["System"])
+async def test() -> dict:
+    users = await prisma.user.find_many()
+    portfolios = await prisma.portfolio.find_many(include={"holdings": True, "snapshots": True})
+    return {
+        "user": users,
+        "portfolio": portfolios
+    }
+        
+    

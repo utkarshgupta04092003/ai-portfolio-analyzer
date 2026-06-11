@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks
 from app.services.portfolio_service import PortfolioService
 from app.db.repositories import PortfolioRepository
 
@@ -6,15 +6,25 @@ router = APIRouter()
 
 @router.post("/upload")
 async def upload_portfolio(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     name: str = Form(...)
 ):
     from app.db.repositories import UserRepository
+    from app.services.enrichment_service import EnrichmentService
+    
     user = await UserRepository.get_user_by_email("user@example.com")
     if not user:
         user = await UserRepository.create_user("user@example.com")
         
     result = await PortfolioService.process_upload(user.id, file, name)
+    
+    # Trigger background enrichment
+    enrichment_svc = EnrichmentService()
+    # Background tasks need sync or async functions, asyncio.create_task could also be used directly
+    import asyncio
+    asyncio.create_task(enrichment_svc.enrich_portfolio(result["portfolio_id"]))
+    
     return result
 
 @router.get("/{portfolio_id}")
