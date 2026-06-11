@@ -52,5 +52,21 @@ async def fundamentals_tool(portfolio_id: str) -> str:
     result = await FundamentalsAnalyzer.get_portfolio_fundamentals(portfolio_id)
     return json.dumps(result)
 
+class CalculatorInput(BaseModel):
+    expression: str = Field(..., description="The mathematical expression to evaluate, e.g., '100 * (1 + 0.15)**5' or '3400 + 4500'.")
+
+@tool("calculator_tool", args_schema=CalculatorInput, return_direct=False)
+async def calculator_tool(expression: str) -> str:
+    """Evaluates basic mathematical/arithmetic expressions. ALWAYS use this tool whenever you need to perform any arithmetic calculations."""
+    try:
+        import re
+        # Allow only safe characters for arithmetic evaluation
+        sanitized = re.sub(r'[^0-9\+\-\*\/\%\(\)\.\s]', '', expression)
+        # Safely evaluate with no builtins allowed
+        res = eval(sanitized, {"__builtins__": None}, {})
+        return json.dumps({"expression": expression, "result": float(res)})
+    except Exception as e:
+        return json.dumps({"error": f"Failed to evaluate expression: {str(e)}"})
+
 def get_all_tools():
-    return [performance_tool, risk_tool, diversification_tool, correlation_tool, simulation_tool, fundamentals_tool]
+    return [performance_tool, risk_tool, diversification_tool, correlation_tool, simulation_tool, fundamentals_tool, calculator_tool]
