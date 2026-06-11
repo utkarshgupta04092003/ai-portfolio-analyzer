@@ -1,0 +1,116 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider             = "prisma-client-py"
+  recursive_type_depth = 5
+}
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  portfolios Portfolio[]
+  sessions   ChatSession[]
+}
+
+model Portfolio {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  user      User     @relation(fields: [userId], references: [id])
+  holdings  Holding[]
+  snapshots AnalyticsSnapshot[]
+}
+
+model Holding {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  portfolioId String   @db.ObjectId
+  symbol      String
+  quantity    Float
+  weight      Float?
+  costBasis   Float?
+  
+  portfolio   Portfolio @relation(fields: [portfolioId], references: [id])
+  @@index([portfolioId, symbol])
+}
+
+model CompanyMetadata {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  symbol      String   @unique
+  name        String
+  sector      String?
+  industry    String?
+  marketCap   Float?
+  lastUpdated DateTime @default(now())
+}
+
+model HistoricalPrice {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  symbol      String
+  date        DateTime
+  close       Float
+  volume      Float?
+  
+  @@unique([symbol, date])
+}
+
+model Benchmark {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  symbol      String   @unique // e.g., SPY, QQQ
+  name        String
+}
+
+model ChatSession {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  title       String?
+  createdAt   DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id])
+  messages    Message[]
+}
+
+model Message {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionId     String   @db.ObjectId
+  role          String   // "user", "assistant", "tool"
+  content       String
+  canvasType    String?
+  canvasPayload Json?
+  createdAt     DateTime @default(now())
+  
+  session       ChatSession @relation(fields: [sessionId], references: [id])
+}
+
+model AnalyticsSnapshot {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  portfolioId   String   @db.ObjectId
+  metricsType   String   // "performance", "risk", "diversification"
+  metricsData   Json
+  calculatedAt  DateTime @default(now())
+  
+  portfolio     Portfolio @relation(fields: [portfolioId], references: [id])
+}
+
+model Simulation {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  portfolioId   String   @db.ObjectId
+  parameters    Json
+  results       Json
+  createdAt     DateTime @default(now())
+}
+
+model EvaluationRun {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  timestamp     DateTime @default(now())
+  metrics       Json
+  report        String
+}
