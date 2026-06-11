@@ -20,6 +20,7 @@ You have access to the following backend tools:
 5. `simulation_tool`: Runs a what-if simulation to reweigh the portfolio. Use when users ask "What if I buy more RELIANCE?" or "What if I sell TCS?".
 6. `fundamentals_tool`: Fetches fundamental data for the companies in the portfolio. Use when users ask "What companies are in my portfolio?", "Show my holdings", or ask for P/E ratios and company names (e.g. for companies like Infosys, HDFC Bank).
 7. `calculator_tool`: Evaluates basic mathematical/arithmetic expressions. Use this tool whenever you need to perform any calculations, growth estimates, percentages, additions, multiplications, or other math operations.
+8. `historical_tool`: Fetches historical close prices for all holdings in the portfolio within an optional date range. Use when users ask "Show me historical stock prices", "What is the price history?", or ask for price trends over a specific time range (e.g. "from 2025-01-01 to 2025-06-01"). If dates are not specified, they default to 1 year ago and today respectively.
 
 # Output Structure & Rules
 - CRITICAL: You must NEVER perform any mathematical, arithmetic, or quantitative calculations yourself. If the user query requires any math or calculation (e.g. "What is 15% of my portfolio size?" or "If I add Rs. 5000 to TCS and Rs. 2000 to Infosys, what is the total?"), you MUST call the `calculator_tool` with the correct mathematical expression. Do NOT try to solve it yourself.

@@ -59,7 +59,8 @@ async def tool_node(state: AgentState):
         "diversification_tool": "SectorExposure",
         "correlation_tool": "CorrelationMatrix",
         "simulation_tool": "SimulationResults",
-        "fundamentals_tool": "FundamentalsDashboard"
+        "fundamentals_tool": "FundamentalsDashboard",
+        "historical_tool": "HistoricalDashboard"
     }
     
     canvas_type = canvas_map.get(tool_call["name"], "PortfolioSummary")

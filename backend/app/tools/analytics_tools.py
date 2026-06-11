@@ -68,5 +68,60 @@ async def calculator_tool(expression: str) -> str:
     except Exception as e:
         return json.dumps({"error": f"Failed to evaluate expression: {str(e)}"})
 
+class HistoricalInput(BaseModel):
+    portfolio_id: str = Field(..., description="The ID of the portfolio to fetch historical data for.")
+    start_date: str | None = Field(None, description="Start date in YYYY-MM-DD format (optional, defaults to 1 year ago).")
+    end_date: str | None = Field(None, description="End date in YYYY-MM-DD format (optional, defaults to today).")
+
+@tool("historical_tool", args_schema=HistoricalInput, return_direct=False)
+async def historical_tool(portfolio_id: str, start_date: str | None = None, end_date: str | None = None) -> str:
+    """Fetches historical close prices for all holdings in the portfolio from start_date to end_date. Both are optional and default to 1 year ago and today, respectively."""
+    from datetime import datetime, timedelta
+    from app.db.client import prisma
+
+    try:
+        if end_date:
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+        else:
+            end_dt = datetime.now()
+            
+        if start_date:
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+        else:
+            start_dt = end_dt - timedelta(days=365)
+    except ValueError:
+        return json.dumps({"error": "Dates must be in YYYY-MM-DD format"})
+
+    portfolio = await prisma.portfolio.find_unique(
+        where={"id": portfolio_id},
+        include={"holdings": True}
+    )
+    if not portfolio or not portfolio.holdings:
+        return json.dumps({"error": "Portfolio has no holdings or does not exist"})
+        
+    symbols = [h.symbol for h in portfolio.holdings]
+    if not symbols:
+        return json.dumps({"historical_data": []})
+
+    prices = await prisma.historicalprice.find_many(
+        where={
+            "symbol": {"in": symbols},
+            "date": {
+                "gte": start_dt,
+                "lte": end_dt
+            }
+        },
+        order={"date": "asc"}
+    )
+
+    date_map = {}
+    for p in prices:
+        dt_str = p.date.strftime("%Y-%m-%d")
+        if dt_str not in date_map:
+            date_map[dt_str] = {"date": dt_str}
+        date_map[dt_str][p.symbol] = p.close
+
+    return json.dumps({"historical_data": list(date_map.values())})
+
 def get_all_tools():
-    return [performance_tool, risk_tool, diversification_tool, correlation_tool, simulation_tool, fundamentals_tool, calculator_tool]
+    return [performance_tool, risk_tool, diversification_tool, correlation_tool, simulation_tool, fundamentals_tool, calculator_tool, historical_tool]

@@ -1,6 +1,8 @@
 import { useAppStore } from "@/store";
 import CorrelationDashboard from "./CorrelationDashboard";
+import FundamentalsDashboard from "./FundamentalsDashboard";
 import GeneralDashboard from "./GeneralDashboard";
+import HistoricalDashboard from "./HistoricalDashboard";
 import PerformanceDashboard from "./PerformanceDashboard";
 import RiskDashboard from "./RiskDashboard";
 import SectorExposureDashboard from "./SectorExposureDashboard";
@@ -41,6 +43,10 @@ export default function DynamicCanvas() {
       return <CorrelationDashboard data={canvasPayload} />;
     case "SimulationResults":
       return <SimulationDashboard data={canvasPayload} />;
+    case "HistoricalDashboard":
+      return <HistoricalDashboard data={canvasPayload} />;
+    case "FundamentalsDashboard":
+      return <FundamentalsDashboard data={canvasPayload} />;
     default:
       return (
         <GeneralDashboard data={canvasPayload} activeCanvas={activeCanvas} />
