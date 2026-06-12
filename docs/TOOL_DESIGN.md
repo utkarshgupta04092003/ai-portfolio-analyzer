@@ -55,8 +55,56 @@ Tools bridge the gap between the LLM and the deterministic Python analytics engi
 
 ### `simulation_tool`
 - **Input**: `portfolio_id`, `mutations` (list of symbol and weight changes)
-- **Service Called**: `SimulationService.run_mutation()`
+- **Service Called**: `SimulationAnalyzer.run_mutation()`
 - **Output Schema**: Projected return and risk metrics based on the mutation.
+
+### `fundamentals_tool`
+- **Input**: `portfolio_id`
+- **Service Called**: `FundamentalsAnalyzer.get_portfolio_fundamentals()`
+- **Output Schema**: 
+  ```json
+  {
+    "portfolio_fundamentals": {
+      "SYMBOL": {
+        "name": string,
+        "sector": string,
+        "marketCap": float,
+        "trailingPE": float,
+        "forwardPE": float,
+        "dividendYield": float,
+        "beta": float
+      }
+    }
+  }
+  ```
+
+### `calculator_tool`
+- **Input**: `expression` (arithmetic expression containing numbers, `+`, `-`, `*`, `/`, `%`, `(`, `)`)
+- **Service Called**: Safely evaluates the expression using sanitized local code.
+- **Output Schema**:
+  ```json
+  {
+    "expression": string,
+    "result": float
+  }
+  ```
+
+### `historical_tool`
+- **Input**: `portfolio_id`, `start_date` (optional YYYY-MM-DD), `end_date` (optional YYYY-MM-DD)
+- **Service Called**: Queries historical close prices for portfolio holdings.
+- **Output Schema**:
+  ```json
+  {
+    "historical_data": [
+      {
+        "date": "YYYY-MM-DD",
+        "SYMBOL_1": float,
+        "SYMBOL_2": float
+      }
+    ]
+  }
+  ```
 
 ## 3. Tool Error Handling
 If an exception occurs within a service (e.g., missing data, invalid math), the tool catches the exception and returns a structured error object `{"error": "description"}`, which the Agent uses to inform the user.
+

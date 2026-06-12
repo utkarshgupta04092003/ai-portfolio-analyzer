@@ -27,8 +27,16 @@ graph TD
 
 ## 2. Frontend Architecture
 - **Pages/Layouts**: Next.js App Router for high-level structure.
-- **Canvas System**: A factory component that receives a `canvas_type` and `canvas_payload` from the backend and dynamically mounts the appropriate Recharts/Dashboard component.
-- **State**: Zustand for global UI state (sidebar open, current active canvas), TanStack Query for server state (caching responses, polling for data enrichment status).
+- **Canvas System**: A factory component (`DynamicCanvas`) that receives an `activeCanvas` type and `canvasPayload` from the backend, and dynamically mounts the corresponding visual dashboard:
+  - **`PerformanceDashboard`**: Compares portfolio performance against the **Nifty 50** (`^NSEI`) benchmark index (returns, CAPM Beta, Jensen's Alpha).
+  - **`RiskDashboard`**: Displays deterministic risk metrics (Annualized Volatility, Max Drawdown, 95% VaR, 95% CVaR).
+  - **`SectorExposureDashboard`**: Highlights concentration analysis and sector distribution.
+  - **`CorrelationDashboard`**: Shows a matrix heatmap of pairwise historical price correlations between holdings.
+  - **`SimulationDashboard`**: Displays projected risk/return outcomes from what-if weight rebalancing scenarios.
+  - **`HistoricalDashboard`**: Renders close price timelines for portfolio holdings.
+  - **`FundamentalsDashboard`**: Lists stock names, sectors, market capitalizations, and trailing/forward PE ratios.
+  - **`GeneralDashboard`**: Default onboarding view containing quick analysis cards with dynamic prompt autofill capability.
+- **State**: Zustand for global UI state (current active canvas, portfolio identifier, and sidebar status), TanStack Query for server state (caching responses, polling for data enrichment status).
 
 ## 3. Backend Architecture
 The backend is structured into distinct modules:

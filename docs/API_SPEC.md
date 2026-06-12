@@ -25,7 +25,8 @@ The backend exposes a RESTful API built with FastAPI under the `/api/v1` prefix.
 ## 3. Chat (Agent Interface)
 `POST /api/v1/chat/message`
 - **Description**: Send a message to the LangGraph agent.
-- **Request**: `{ "session_id": "...", "portfolio_id": "...", "message": "Show me my risk" }`
+- **Request**: `{ "session_id": "...", "portfolio_id": "..." (optional), "message": "Show me my risk" }`
+  - Note: If `portfolio_id` is `"None"`, `"null"`, `"undefined"`, `""`, or is an invalid MongoDB ObjectId, the endpoint will filter it and fall back to the user's latest uploaded portfolio.
 - **Response**: 
   ```json
   {
@@ -39,8 +40,41 @@ The backend exposes a RESTful API built with FastAPI under the `/api/v1` prefix.
   }
   ```
 
-`GET /api/v1/chat/sessions/{session_id}/history`
-- **Description**: Retrieve message history for a given session.
+`GET /api/v1/chat/sessions`
+- **Description**: Retrieve all chat sessions for the authenticated user, ordered by creation date descending.
+- **Response**:
+  ```json
+  [
+    {
+      "id": "60c72b2f9b1d8e001c34a2e5",
+      "title": "Portfolio diversification analysis",
+      "createdAt": "2026-06-11T13:00:00Z"
+    }
+  ]
+  ```
+
+`GET /api/v1/chat/sessions/{session_id}/messages`
+- **Description**: Retrieve all historical messages and dynamic canvas states for a given session.
+- **Response**:
+  ```json
+  [
+    {
+      "role": "user",
+      "content": "Show me my risk"
+    },
+    {
+      "role": "ai",
+      "content": "Here are your risk metrics...",
+      "canvasType": "RiskDashboard",
+      "canvasPayload": {
+        "volatility": 0.152,
+        "max_drawdown": -0.221,
+        "var_95": -0.024,
+        "cvar_95": -0.031
+      }
+    }
+  ]
+  ```
 
 ## 4. System
 `GET /api/v1/health`

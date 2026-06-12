@@ -83,18 +83,23 @@ Fetches daily pricing data.
 ## 3. Analytics Engines (`app.analytics`)
 
 ### `PerformanceAnalyzer.calculate_metrics`
-Calculates cumulative returns and annualized performance.
+Calculates cumulative returns, annualized performance, and relative performance metrics against the **Nifty 50** (`^NSEI`) benchmark.
 * **Input**: 
   - `portfolio_id` (str): The MongoDB ObjectId of the portfolio.
 * **Database / Side Effects**:
   - Reads `Holding` and `HistoricalPrice` from MongoDB. 
   - Merges and pivots pricing data using Pandas to align dates, and mathematically computes daily returns.
+  - Fetches or triggers enrichment for benchmark close prices, then computes Beta (CAPM) and Jensen's Alpha.
 * **Output Format**:
 ```json
 {
-  "totalReturn": 0.245,        // 24.5% cumulative return
-  "annualizedReturn": 0.081,   // 8.1% annualized return
-  "totalValue": 150000.50      // Current portfolio value
+  "total_return": 0.245,                  // Cumulative return
+  "annualized_return": 0.081,             // Annualized return
+  "sharpe_ratio": 1.45,                   // Sharpe ratio against default risk-free rate
+  "benchmark_total_return": 0.182,        // Cumulative return of benchmark index
+  "benchmark_annualized_return": 0.062,   // Annualized return of benchmark index
+  "alpha": 0.023,                         // Jensen's Alpha (excess performance)
+  "beta": 1.05                            // CAPM Beta (systematic market risk coefficient)
 }
 ```
 
@@ -104,14 +109,14 @@ Calculates risk metrics based on daily covariance and variance.
   - `portfolio_id` (str): The MongoDB ObjectId of the portfolio.
 * **Database / Side Effects**:
   - Reads `Holding` and `HistoricalPrice` from MongoDB.
-  - Manipulates data via Pandas to calculate annualized covariance and historical peaks (for max drawdown).
+  - Manipulates data via Pandas to calculate annualized volatility, maximum historical drawdown, Value at Risk, and Conditional Value at Risk.
 * **Output Format**:
 ```json
 {
-  "volatility": 0.152,         // 15.2% annualized volatility
-  "maxDrawdown": 0.221,        // 22.1% max historical drawdown
-  "sharpeRatio": 1.45,         // Risk-adjusted return
-  "var95": 0.024               // 95% Value at Risk (daily)
+  "volatility": 0.152,         // Annualized volatility (standard deviation of daily returns)
+  "max_drawdown": -0.221,      // Max historical drawdown from peak to trough
+  "var_95": -0.024,            // 95% Daily Value at Risk
+  "cvar_95": -0.031            // 95% Daily Conditional Value at Risk (Expected Shortfall)
 }
 ```
 
@@ -125,12 +130,12 @@ Calculates portfolio concentration and sector allocation weights.
 * **Output Format**:
 ```json
 {
-  "concentrationScore": 0.65,  // Herfindahl-Hirschman Index
-  "sectorAllocation": {
-    "Technology": 0.45,        // 45% weight
-    "Energy": 0.30,            // 30% weight
-    "Financials": 0.25         // 25% weight
-  }
+  "concentration_score": 0.65,  // Herfindahl-Hirschman Index based on sector exposure
+  "sectors": [
+    { "name": "Technology", "weight": 0.45 },
+    { "name": "Energy", "weight": 0.30 },
+    { "name": "Financials", "weight": 0.25 }
+  ]
 }
 ```
 
@@ -197,32 +202,55 @@ Simulates a what-if scenario projecting returns if weights are shifted or new as
 }
 ```
 
+### `historical_tool` (Historical Timeline)
+Fetches historical close price arrays for all symbols in the active portfolio.
+* **Input**:
+  - `portfolio_id` (str): The MongoDB ObjectId of the portfolio.
+  - `start_date` (str, optional): Start date YYYY-MM-DD.
+  - `end_date` (str, optional): End date YYYY-MM-DD.
+* **Output Format**:
+```json
+{
+  "historical_data": [
+    {
+      "date": "2026-06-10",
+      "RELIANCE.NS": 2900.5,
+      "TCS.NS": 3450.2
+    },
+    {
+      "date": "2026-06-11",
+      "RELIANCE.NS": 2915.2,
+      "TCS.NS": 3462.8
+    }
+  ]
+}
+```
+
 ---
 
 ## 4. LangGraph Agent Layer (`app.agent`)
 
 ### `router_node(state: AgentState)`
-Analyzes the user's chat message to determine the required AI tools and the UI canvas needed.
+Determines if a tool should be executed based on the user request.
 * **Input**: 
-  - `state` (Dict): LangGraph internal state dictionary `{"messages": [HumanMessage]}`.
+  - `state` (AgentState): Contains the sequence of conversation messages.
 * **Database / Side Effects**:
-  - Uses OpenAI LLM structured parsing.
-  - Updates the `state` with determined `canvas_type` (e.g., `PortfolioSummary`) and any required tools to execute.
-* **Output Format**: Returns mutated `state` dict.
+  - Passes conversation history to OpenAI LLM bound with tools (`llm.bind_tools(tools)`).
+* **Output Format**: Returns the state dict with the AI response message containing any requested tool calls.
 
 ### `tool_node(state: AgentState)`
-Executes backend tools requested by the LLM (like `performance_tool` or `simulation_tool`).
+Executes the tool requested by the routing LLM.
 * **Input**: 
-  - `state` (Dict): LangGraph internal state dictionary containing tool invocation requests.
+  - `state` (AgentState): Contains the active portfolio id and the tool request message.
 * **Database / Side Effects**:
-  - Reads cached `AnalyticsSnapshot` from MongoDB directly via the `app.tools` wrappers to prevent re-calculating expensive math.
-* **Output Format**: Returns mutated `state` dict with JSON strings of tool responses appended to `messages`.
+  - Automatically executes the corresponding LangChain Tool.
+  - Resolves output and maps it to a canvas dashboard type (`canvas_type`) and canvas payload (`canvas_payload`).
+* **Output Format**: Returns the state dict with a `ToolMessage` appended to `messages`, and updates `canvas_type` and `canvas_payload`.
 
 ### `response_node(state: AgentState)`
-Generates the final conversational reply and standardizes the canvas payload for the frontend.
+Synthesizes the natural language response using the tool output.
 * **Input**: 
-  - `state` (Dict): LangGraph internal state dictionary with all completed tool context.
+  - `state` (AgentState): Contains the conversation history and tool execution response.
 * **Database / Side Effects**:
-  - Invokes OpenAI LLM to generate the final conversational response `AIMessage`.
-  - Serializes tool outputs into `canvas_payload`.
-* **Output Format**: Returns mutated `state` dict containing final `messages` and `canvas_payload`.
+  - Queries the OpenAI LLM with a system prompt instructing it to explain the tool output without performing math.
+* **Output Format**: Returns the state dict with the final conversational `AIMessage` response.

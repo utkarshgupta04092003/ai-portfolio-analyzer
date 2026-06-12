@@ -4,42 +4,39 @@ The agent is implemented using LangGraph, providing a cyclic graph structure to 
 
 ## 1. State Definition
 ```python
-from typing import TypedDict, List
+from typing import TypedDict, Annotated, Sequence
+import operator
 from langchain_core.messages import BaseMessage
 
 class AgentState(TypedDict):
-    messages: List[BaseMessage]
+    messages: Annotated[Sequence[BaseMessage], operator.add]
     portfolio_id: str
-    selected_tool: str | None
-    tool_output: dict | None
-    canvas_type: str | None
-    canvas_payload: dict | None
+    canvas_type: str
+    canvas_payload: dict
 ```
 
 ## 2. Graph Nodes
 
-### **Node 1: Intent Router**
-- **Purpose**: Analyze the user's message and determine if a specific tool (Analytics) is needed or if it's a general question.
-- **LLM Prompt**: "You are a routing agent. Given the query, output the tool name to use, or 'none' if no tool is required."
+### **Node 1: Router Node (`router_node`)**
+- **Purpose**: Analyze the user's message history to decide if a structured analytics tool call is required.
+- **Implementation**: Binds tools to the OpenAI LLM (`llm.bind_tools(tools)`). If the LLM generates a tool call in its response, the workflow proceeds to execution.
 
-### **Node 2: Tool Executor**
-- **Purpose**: Executes the corresponding LangChain Tool (which internally calls the deterministic Python Services).
-- **Execution**: The tool returns a structured JSON object.
-- **State Update**: Updates `tool_output` in the State.
+### **Node 2: Tool Node (`tool_node`)**
+- **Purpose**: Executes the chosen LangChain tool, automatically injecting the current `portfolio_id` if needed.
+- **Canvas Mapping**: Evaluates the executed tool and maps it to the appropriate canvas dashboard (e.g. `correlation_tool` -> `CorrelationMatrix`, `historical_tool` -> `HistoricalDashboard`). It returns a `ToolMessage` with the calculation output and updates `canvas_type` and `canvas_payload`.
 
-### **Node 3: Response Generator**
-- **Purpose**: Takes the `tool_output` and the original user query, and generates a conversational response.
-- **Constraint**: Must NOT perform mathematical operations. Must rely entirely on `tool_output`.
-- **Canvas Selection**: Based on the `tool_output` type, determines the appropriate `canvas_type` (e.g., `PerformanceDashboard`, `CorrelationMatrix`) and sets `canvas_payload`.
+### **Node 3: Response Node (`response_node`)**
+- **Purpose**: Takes the raw tool output from the database or services and uses the OpenAI LLM to synthesize a helpful, conversational, natural language explanation.
+- **Constraint**: Must NOT perform mathematical calculations; it relies strictly on the structured tool outputs.
 
 ## 3. Workflow
 ```mermaid
 stateDiagram-v2
-    [*] --> IntentRouter
-    IntentRouter --> ToolExecutor : Requires Analysis
-    IntentRouter --> ResponseGenerator : General Chat
-    ToolExecutor --> ResponseGenerator
-    ResponseGenerator --> [*]
+    [*] --> RouterNode
+    RouterNode --> ToolNode : LLM Decides to call Tool
+    RouterNode --> [*] : LLM Generates Final Answer Directly
+    ToolNode --> ResponseNode
+    ResponseNode --> [*]
 ```
 
 ## 4. Prompt Management
