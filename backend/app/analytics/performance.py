@@ -38,7 +38,13 @@ class PerformanceAnalyzer:
         df.ffill(inplace=True)
         
         daily_returns = df.pct_change().dropna()
-        port_returns = daily_returns.dot(pd.Series(weights))
+        
+        # Align weights with available data to prevent "matrices are not aligned" error
+        series_weights = pd.Series(weights).reindex(daily_returns.columns).fillna(0)
+        if series_weights.sum() > 0:
+            series_weights = series_weights / series_weights.sum()
+            
+        port_returns = daily_returns.dot(series_weights)
         return port_returns
 
     @staticmethod
