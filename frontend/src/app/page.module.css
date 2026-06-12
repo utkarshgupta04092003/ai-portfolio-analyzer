@@ -121,6 +121,29 @@
   color: var(--text-secondary);
 }
 
+.deleteBtn {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+  opacity: 0.5;
+}
+
+.historyItem:hover .deleteBtn {
+  opacity: 1;
+}
+
+.deleteBtn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
 /* Upload Area styling */
 .uploadContainer {
   display: flex;

@@ -60,6 +60,21 @@ async def get_session_messages(session_id: str):
         for m in messages
     ]
 
+@router.delete("/sessions/{session_id}")
+async def delete_session(session_id: str):
+    target_id = to_object_id(session_id)
+    # Ensure session exists
+    session = await prisma.chatsession.find_unique(where={"id": target_id})
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+        
+    # Delete all messages associated with the session
+    await prisma.message.delete_many(where={"sessionId": target_id})
+    # Delete the session
+    await prisma.chatsession.delete(where={"id": target_id})
+    
+    return {"status": "success", "message": "Session deleted"}
+
 def is_valid_object_id(s: str | None) -> bool:
     if not s:
         return False

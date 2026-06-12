@@ -8,9 +8,10 @@ import {
   MessageSquare,
   Plus,
   Send,
+  Trash2,
   UploadCloud,
 } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -24,6 +25,7 @@ function DashboardContent() {
   const [fileName, setFileName] = useState("");
   const [sessions, setSessions] = useState<any[]>([]);
   const searchParams = useSearchParams();
+  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const {
@@ -134,6 +136,27 @@ function DashboardContent() {
     ]);
     setActiveCanvas("PortfolioSummary");
     setCanvasPayload(null);
+  };
+
+  const deleteSession = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (!confirm("Are you sure you want to delete this conversation?")) return;
+
+    try {
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL ||
+        (process.env.NODE_ENV === "production"
+          ? "/_/backend"
+          : "http://localhost:8000");
+      const res = await fetch(`${apiUrl}/api/v1/chat/sessions/${id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        router.push("/");
+      }
+    } catch (error) {
+      console.error("Failed to delete session:", error);
+    }
   };
 
   const fetchActivePortfolio = async () => {
@@ -388,6 +411,13 @@ function DashboardContent() {
                     }}
                   />
                   <span className={styles.historyItemTitle}>{sess.title}</span>
+                  <button
+                    className={styles.deleteBtn}
+                    onClick={(e) => deleteSession(e, sess.id)}
+                    title="Delete Conversation"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
                 <span className={styles.historyItemTime}>
                   {new Date(sess.createdAt).toLocaleDateString("en-IN", {

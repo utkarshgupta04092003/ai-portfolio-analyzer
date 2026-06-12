@@ -81,8 +81,3 @@ Create the evaluation framework to test intent routing, numerical grounding, hal
 
 ### Phase 15: Testing
 Write Pytest tests for backend and Component/E2E tests for frontend.
-
-## User Review Required
-
-> [!IMPORTANT]
-> Please review the 15-phase implementation plan and provide your approval to begin Phase 1 (Documentation and System Design). Once approved, I will generate all the required architectural documents in the `/docs` folder.
