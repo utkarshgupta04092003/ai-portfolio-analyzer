@@ -58,7 +58,11 @@ function DashboardContent() {
 
   const fetchSessions = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL ||
+        (process.env.NODE_ENV === "production"
+          ? "/_/backend"
+          : "http://localhost:8000");
       const res = await fetch(`${apiUrl}/api/v1/chat/sessions`);
       if (res.ok) {
         const data = await res.json();
@@ -71,7 +75,11 @@ function DashboardContent() {
 
   const loadSessionMessages = async (id: string) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL ||
+        (process.env.NODE_ENV === "production"
+          ? "/_/backend"
+          : "http://localhost:8000");
       const res = await fetch(`${apiUrl}/api/v1/chat/sessions/${id}/messages`);
       if (res.ok) {
         const data = await res.json();
@@ -130,7 +138,11 @@ function DashboardContent() {
 
   const fetchActivePortfolio = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL ||
+        (process.env.NODE_ENV === "production"
+          ? "/_/backend"
+          : "http://localhost:8000");
       const res = await fetch(`${apiUrl}/api/v1/portfolios/active`);
       if (res.ok) {
         const data = await res.json();
@@ -172,7 +184,11 @@ function DashboardContent() {
         ...prev,
         { role: "user", content: `Uploading ${file.name}...` },
       ]);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL ||
+        (process.env.NODE_ENV === "production"
+          ? "/_/backend"
+          : "http://localhost:8000");
       const res = await fetch(`${apiUrl}/api/v1/portfolios/upload`, {
         method: "POST",
         body: formData,
@@ -225,7 +241,11 @@ function DashboardContent() {
     setIsTyping(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL ||
+        (process.env.NODE_ENV === "production"
+          ? "/_/backend"
+          : "http://localhost:8000");
       const res = await fetch(`${apiUrl}/api/v1/chat/message`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
