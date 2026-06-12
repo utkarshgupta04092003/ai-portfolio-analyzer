@@ -27,6 +27,25 @@ async def upload_portfolio(
     
     return result
 
+@router.get("/active")
+async def get_active_portfolio():
+    from app.db.repositories import UserRepository
+    from app.db.client import prisma
+    user = await UserRepository.get_user_by_email("user@example.com")
+    if not user:
+        return {"portfolio_id": None, "name": None}
+        
+    portfolio = await prisma.portfolio.find_first(
+        where={"userId": user.id},
+        order={"createdAt": "desc"}
+    )
+    
+    if not portfolio:
+        return {"portfolio_id": None, "name": None}
+        
+    return {"portfolio_id": portfolio.id, "name": portfolio.name}
+
+
 @router.get("/{portfolio_id}")
 async def get_portfolio(portfolio_id: str):
     portfolio = await PortfolioRepository.get_portfolio(portfolio_id)
